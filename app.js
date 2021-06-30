@@ -2,7 +2,7 @@ const { google } = require('googleapis')
 const path = require('path');
 const fs = require('fs');
 const mime = require('mime-types')
-
+const moment = require('moment')
 const CLIENT_ID = "1053431940611-he0t7ad89i0edv52qdhj549rfqao92tn.apps.googleusercontent.com"
 const CLIENT_SECRET = "ffsLMIA1lnx80nFu_9TRpGX1"
 const REDIRECT_URI = "https://developers.google.com/oauthplayground"
@@ -24,6 +24,7 @@ const drive = google.drive({
 fileInfo = [];
 const pathName = 'D://file';
 const files = fs.readdirSync(pathName);
+
 async function uploadMultiFile() {
     for (var i in files) {
         fileInfo[i] = {
@@ -34,16 +35,92 @@ async function uploadMultiFile() {
         await uploadFile(fileInfo[i].name, fileInfo[i].pathName, fileInfo[i].mimeType)
     }
 }
-uploadMultiFile();
+async function uploadMultiFileInFolder(folderId) {
+    console.log('Starting upload file to Folder: ', folderId)
+    for (var i in files) {
+        fileInfo[i] = {
+            name: files[i],
+            pathName: pathName + '/' + files[i],
+            mimeType: mime.lookup(files[i]),
+        }
+        await createFileInFolder(folderId, fileInfo[i].name, fileInfo[i].mimeType, fileInfo[i].pathName)
+    }
+}
+//uploadMultiFile();
+var obj = { folder: [] }
+
+async function checkExitsFolder(nameFolder) {
+    let parentFolder = '1fDaYNjc9_p20Iot7yThUsLmNBS2iOpCp';
+    fs.readFile('data.json', 'utf8', (err, data) => {
+        if (err) {
+            console.log(err)
+        } else if (data) {
+            console.log('Exist data in Json File')
+            obj = JSON.parse(data);
+            let folder = obj.folder;
+            folder.map(async (element, index) => {
+                if (element.name === nameFolder) {
+                    console.log('Exist folder Today in JSON data')
+                    console.log('folderId: ', element.id)
+                    let folderId = element.id;
+                    uploadMultiFileInFolder(folderId);
+                } else {
+                    console.log('Not exist folder Today in JSON data')
+                    //tao folder moi && upload file
+                    createFolderInFolder(parentFolder, nameFolder, true);
+                    //console.log(folderId)
+                }
+            })
+        } else {
+            console.log("Don't have any data in data.json file")
+            //tao folder moi && upload file
+            createFolderInFolder(parentFolder, nameFolder, true);
+
+        }
+    })
+}
+checkExitsFolder(String(moment().format('YYYY-MM-DD')))
+
+
+async function addData(id, name, time) {
+    fs.readFile('data.json', 'utf8', (err, data) => {
+        if (err) {
+            console.log(err)
+        } else if (data) {
+            console.log('co du lieu')
+            obj = JSON.parse(data);
+            let folder = obj.folder;
+            folder.map((element, index) => {
+                if (element.name === name) {
+                    console.log('co ton tai')
+                } else {
+                    console.log('ko ton tai')
+                }
+                //console.log(index,element)
+            })
+            obj.folder.push({ id, name, time })
+            var json = JSON.stringify(obj)
+            fs.writeFile('data.json', json, 'utf8', () => {
+                console.log('file write')
+            })
+        } else {
+            console.log('ko co du lieu');
+            obj.folder.push({ id, name, time })
+            var json = JSON.stringify(obj)
+            fs.writeFile('data.json', json, 'utf8', () => {
+                console.log('file write')
+            })
+        }
+    })
+}
 
 
 const filePath = path.join(__dirname, 'checklist.doc')
-console.log(filePath)
 
 async function uploadFile(name, path, mimeType) {
     try {
         var folderId = '1fDaYNjc9_p20Iot7yThUsLmNBS2iOpCp';
-        const respone = await drive.files.create({
+        const response = await drive.files.create({
             requestBody: {
                 name,
                 mimeType,
@@ -56,7 +133,7 @@ async function uploadFile(name, path, mimeType) {
                 body: fs.createReadStream(path)
             }
         })
-        console.log(respone.data);
+        console.log(response.data);
     } catch (error) {
         console.log(error.message);
     }
@@ -65,10 +142,10 @@ async function uploadFile(name, path, mimeType) {
 
 async function deleteFile() {
     try {
-        const respone = await drive.files.delete({
+        const response = await drive.files.delete({
             fileId: '1rTxcy0VHpUQGclZpf4xZPtSCTf7CfKUw',
         });
-        console.log(respone.data, respone.status)
+        console.log(response.data, response.status)
 
     } catch (error) {
         console.log(error.message)
@@ -76,10 +153,10 @@ async function deleteFile() {
 }
 async function deleteFolder(fileId) {
     try {
-        const respone = await drive.files.delete({
+        const response = await drive.files.delete({
             fileId,
         });
-        console.log(respone.data, respone.status)
+        console.log(response.data, response.status)
 
     } catch (error) {
         console.log(error.message)
@@ -121,6 +198,7 @@ async function createFolder(name) {
                 console.log(error)
             } else {
                 console.log('Folder Id: ', file.data.id)
+                return file.data.id
             }
         })
     } catch (error) {
@@ -128,46 +206,41 @@ async function createFolder(name) {
     }
 }
 
-async function createFileInFolder() {
+async function createFileInFolder(id, name, mimeType, path) {
     try {
-        var folderId = '1vXUZunTRB_utE8Dcmwtt0NDkheS5UmYf';
+        var folderId = id;
         var fileMetadata = {
-            'name': 'photo.jpg',
+            'name': name,
             parents: [folderId]
         };
         var media = {
-            mimeType: 'image/jpeg',
-            body: fs.createReadStream(filePath)
+            mimeType,
+            body: fs.createReadStream(path)
         };
-        drive.files.create({
+        await drive.files.create({
             resource: fileMetadata,
             media: media,
-            fields: 'id'
+            fields: 'id, name'
         }, function (err, file) {
             if (err) {
                 // Handle error
                 console.error(err);
             } else {
-                console.log('File Id: ', file.id);
+                console.log('Upload file: ',file.data, 'complete')
             }
         });
     } catch (error) {
         console.log(error)
     }
 }
-async function createFolderInFolder() {
+async function createFolderInFolder(folderId, name, UploadFile) {
     try {
-        var folderId = '1vXUZunTRB_utE8Dcmwtt0NDkheS5UmYf';
         var fileMetadata = {
-            'name': 'New Folder 1',
+            'name': name,
             'mimeType': 'application/vnd.google-apps.folder',
             parents: [folderId]
         };
-        var media = {
-            mimeType: 'image/jpeg',
-            body: fs.createReadStream(filePath)
-        };
-        drive.files.create({
+        await drive.files.create({
             resource: fileMetadata,
             fields: 'id'
         }, function (err, file) {
@@ -175,19 +248,47 @@ async function createFolderInFolder() {
                 // Handle error
                 console.error(err);
             } else {
-                console.log('File Id: ', file.data.id);
+                console.log('Create Folder successfully');
+                console.log('Folder Id: ', file.data.id);
+                obj.folder.push({ id: file.data.id , name: name, time: moment() })
+                var json = JSON.stringify(obj)
+                fs.writeFile('data.json', json, 'utf8', () => {
+                    console.log('Save data to data.json complete!')
+                })
+                if (UploadFile) {
+                    uploadMultiFileInFolder(file.data.id)
+                }
+
             }
         });
     } catch (error) {
         console.log(error)
     }
 }
+
+async function getListFile() {
+    await drive.files.list({
+        //q: "mimeType = 'application/vnd.google-apps.folder'",
+        q: "folderId= '1fDaYNjc9_p20Iot7yThUsLmNBS2iOpCp'",
+        //folderId: '1fDaYNjc9_p20Iot7yThUsLmNBS2iOpCp'
+        //parents: '1fDaYNjc9_p20Iot7yThUsLmNBS2iOpCp'
+    }, (err, file) => {
+        console.log(file.data.files)
+    })
+}
+function generateNameFolder() {
+    let date = moment();
+    console.log(date)
+}
+//generateNameFolder();
+//addData('asd', 'asad', moment().format('YYYY-MM-DD'))
+//getListFile();
 //generatePublicUrl();
 //uploadFile();
 //createFolder('backupMongoMangeTool');
 
 //deleteFolder('1d1I00M3_H1AvV8Y-_BSEc0sVfD12_K_n');
-//createFolderInFolder();
+//createFolderInFolder(String(moment().format('YYYY-MM-DD')));
 //createFileInFolder();
 
 //id backupMongoMangeTool 1fDaYNjc9_p20Iot7yThUsLmNBS2iOpCp
