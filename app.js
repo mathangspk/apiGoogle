@@ -22,7 +22,8 @@ const drive = google.drive({
     auth: oauth2Client
 })
 fileInfo = [];
-const pathName = 'D://file';
+//const pathName = 'D://file';
+const pathName = '/home/mathang/backups/mongoManageTool/lastest';
 const files = fs.readdirSync(pathName);
 
 async function uploadMultiFile() {
