@@ -57,6 +57,23 @@ function check(folder, nameFolder) {
         }
     } return false;
 }
+function findIdDelete(obj) {
+    for (var i = 0; i < obj.folder.length; i++) {
+        var today = new Date()
+        var priorDate = new Date().setDate(today.getDate() - 7)
+        //console.log(moment(priorDate).format('YYYY-MM-DD'))
+        priorDate = moment(priorDate).format('YYYY-MM-DD');
+        if (obj.folder[i].name === priorDate) {
+            let idDelete = obj.folder[i].id;
+            obj.folder.splice(0,1);
+            var json = JSON.stringify(obj)
+            fs.writeFile('data.json', json, 'utf8', () => {
+                console.log('file write')
+            })
+            return idDelete;
+        }
+    } return false;
+}
 async function checkExitsFolder(nameFolder) {
     let parentFolder = '1fDaYNjc9_p20Iot7yThUsLmNBS2iOpCp';
     fs.readFile('data.json', 'utf8', (err, data) => {
@@ -66,8 +83,15 @@ async function checkExitsFolder(nameFolder) {
             console.log('Exist data in Json File')
             obj = JSON.parse(data);
             let folder = obj.folder;
+            let idNameDelete = findIdDelete(obj)
+            if (!idNameDelete) {
+                console.log("Don't need remove any folder")
+            } else {
+                console.log("FolderId was deleted: ",idNameDelete)
+                deleteFolder(idNameDelete);
+            }
             let existName = (check(folder, nameFolder))
-            if(!existName){
+            if (!existName) {
                 console.log('Not exist folder Today in JSON data')
                 createFolderInFolder(parentFolder, nameFolder, true);
             } else {
@@ -75,6 +99,7 @@ async function checkExitsFolder(nameFolder) {
                 console.log(existName)
                 uploadMultiFileInFolder(existName);
             }
+
         } else {
             console.log("Don't have any data in data.json file")
             //tao folder moi && upload file
