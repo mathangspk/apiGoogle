@@ -49,7 +49,14 @@ async function uploadMultiFileInFolder(folderId) {
 }
 //uploadMultiFile();
 var obj = { folder: [] }
-
+function check(folder, nameFolder) {
+    for (var i = 0; i < folder.length; i++) {
+        console.log(folder[i].name)
+        if (folder[i].name === nameFolder) {
+            return folder[i].id;
+        }
+    } return false;
+}
 async function checkExitsFolder(nameFolder) {
     let parentFolder = '1fDaYNjc9_p20Iot7yThUsLmNBS2iOpCp';
     fs.readFile('data.json', 'utf8', (err, data) => {
@@ -59,19 +66,15 @@ async function checkExitsFolder(nameFolder) {
             console.log('Exist data in Json File')
             obj = JSON.parse(data);
             let folder = obj.folder;
-            folder.map(async (element, index) => {
-                if (element.name === nameFolder) {
-                    console.log('Exist folder Today in JSON data')
-                    console.log('folderId: ', element.id)
-                    let folderId = element.id;
-                    uploadMultiFileInFolder(folderId);
-                } else {
-                    console.log('Not exist folder Today in JSON data')
-                    //tao folder moi && upload file
-                    createFolderInFolder(parentFolder, nameFolder, true);
-                    //console.log(folderId)
-                }
-            })
+            let existName = (check(folder, nameFolder))
+            if(!existName){
+                console.log('Not exist folder Today in JSON data')
+                createFolderInFolder(parentFolder, nameFolder, true);
+            } else {
+                console.log('Exist folder Today in JSON data')
+                console.log(existName)
+                uploadMultiFileInFolder(existName);
+            }
         } else {
             console.log("Don't have any data in data.json file")
             //tao folder moi && upload file
@@ -227,7 +230,7 @@ async function createFileInFolder(id, name, mimeType, path) {
                 // Handle error
                 console.error(err);
             } else {
-                console.log('Upload file: ',file.data, 'complete')
+                console.log('Upload file: ', file.data, 'complete')
             }
         });
     } catch (error) {
@@ -251,7 +254,7 @@ async function createFolderInFolder(folderId, name, UploadFile) {
             } else {
                 console.log('Create Folder successfully');
                 console.log('Folder Id: ', file.data.id);
-                obj.folder.push({ id: file.data.id , name: name, time: moment() })
+                obj.folder.push({ id: file.data.id, name: name, time: moment() })
                 var json = JSON.stringify(obj)
                 fs.writeFile('data.json', json, 'utf8', () => {
                     console.log('Save data to data.json complete!')
