@@ -4,7 +4,7 @@ const fs = require('fs');
 const mime = require('mime-types')
 const moment = require('moment')
 const CLIENT_ID = "1053431940611-he0t7ad89i0edv52qdhj549rfqao92tn.apps.googleusercontent.com"
-const CLIENT_SECRET = "ffsLMIA1lnx80nFu_9TRpGX1"
+const CLIENT_SECRET = "jBMWRinXEpdJZfDZmHG73FLs"
 const REDIRECT_URI = "https://developers.google.com/oauthplayground"
 
 const REFRESH_TOKEN = "1//04eHozIxocK1PCgYIARAAGAQSNwF-L9IrfKyG7eLV6oIaagzUxJNAVepcdXvngpZuy9Hn5mcax8gNjas03YqK0FowiQupOsWXS14"
