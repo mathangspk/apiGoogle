@@ -23,7 +23,7 @@ const drive = google.drive({
 })
 fileInfo = [];
 //const pathName = 'D://file';
-const pathName = '/home/mathang/backups/mongoManageTool/lastest';
+const pathName = '/home/managetoolvps/backups/mongoManageTool/lastest';
 const files = fs.readdirSync(pathName);
 
 async function uploadMultiFile() {
@@ -65,7 +65,7 @@ function findIdDelete(obj) {
         priorDate = moment(priorDate).format('YYYY-MM-DD');
         if (obj.folder[i].name === priorDate) {
             let idDelete = obj.folder[i].id;
-            obj.folder.splice(0,1);
+            obj.folder.splice(0, 1);
             var json = JSON.stringify(obj)
             fs.writeFile('data.json', json, 'utf8', () => {
                 console.log('file write')
@@ -87,7 +87,7 @@ async function checkExitsFolder(nameFolder) {
             if (!idNameDelete) {
                 console.log("Don't need remove any folder")
             } else {
-                console.log("FolderId was deleted: ",idNameDelete)
+                console.log("FolderId was deleted: ", idNameDelete)
                 deleteFolder(idNameDelete);
             }
             let existName = (check(folder, nameFolder))
